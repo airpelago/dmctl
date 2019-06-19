@@ -40,6 +40,11 @@ func init() {
 		fmt.Print(dockerFailMessage)
 		os.Exit(1)
 	}
+	_, err = cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		fmt.Print(dockerFailMessage)
+		os.Exit(1)
+	}
 	dockerClient = cli
 }
 
