@@ -22,12 +22,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-var containerNames = map[string]string{
-	droneImage: "drone",
-	simImage:   "sim",
-}
 
 // psCmd represents the ps command
 var psCmd = &cobra.Command{
@@ -45,9 +41,13 @@ func runPs(cmd *cobra.Command, args []string) error {
 		bad("No containers running!")
 		return nil
 	}
+	img := viper.GetString("IMAGE")
+	if img == "" {
+		return errNoImage
+	}
 	for _, c := range containers {
-		if name, ok := containerNames[c.Image]; ok {
-			good(fmt.Sprintf("%s running for %s", name, time.Since(time.Unix(c.Created, 0)).Truncate(time.Second)))
+		if c.Image == imageBase+img {
+			good(fmt.Sprintf("Running for %s", time.Since(time.Unix(c.Created, 0)).Truncate(time.Second)))
 		}
 	}
 	return nil

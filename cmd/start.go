@@ -45,21 +45,24 @@ var startDroneCmd = &cobra.Command{
 	RunE:  runStartDrone,
 }
 
-// startSimCmd represents the start sim command
-var startSimCmd = &cobra.Command{
-	Use:   "sim",
-	Short: "Start sim container",
-	Long: `Start sim container
-Location flag must be provided at least once, if omitted later it will be read from config file.`,
-	RunE: runStartSim,
+func runStartDrone(cmd *cobra.Command, args []string) error {
+	img := viper.GetString("IMAGE")
+	if img == "" {
+		return errNoImage
+	}
+	if img == "dmc-sim" {
+		return runSimulatedDrone(imageBase + img)
+	} else {
+		return runOnboardDrone(imageBase + img)
+	}
 }
 
-func runStartDrone(cmd *cobra.Command, args []string) error {
+func runOnboardDrone(imageName string) error {
 	droneEnv := envList("ID", "PASSWORD", "FCU_URL", "GCS_URL", "DMC_URI", "DMC_SESSION_URI", "DMC_ANIP_URI", "MOCK_IMSI", "MOCK_POSITION")
 	config := &container.Config{
 		Env:   droneEnv,
 		Cmd:   []string{},
-		Image: droneImage,
+		Image: imageName,
 		Tty:   true,
 	}
 	policy := container.RestartPolicy{}
@@ -71,10 +74,10 @@ func runStartDrone(cmd *cobra.Command, args []string) error {
 		NetworkMode:   "host",
 		RestartPolicy: policy,
 	}
-	return startContainer("drone", droneImage, config, hostConfig)
+	return startContainer("drone", imageName, config, hostConfig)
 }
 
-func runStartSim(cmd *cobra.Command, args []string) error {
+func runSimulatedDrone(imageName string) error {
 	location := viper.GetString("MOCK_POSITION")
 	if location == "" {
 		return errors.New("location must be set for simulation")
@@ -86,11 +89,11 @@ func runStartSim(cmd *cobra.Command, args []string) error {
 	config := &container.Config{
 		Env:   droneEnv,
 		Cmd:   []string{fmt.Sprintf("--location %s,0", location)},
-		Image: simImage,
+		Image: imageName,
 		Tty:   true,
 	}
 	hostConfig := &container.HostConfig{}
-	return startContainer("sim", simImage, config, hostConfig)
+	return startContainer("drone", imageName, config, hostConfig)
 }
 
 func containerRunning(imageName string) (bool, error) {
@@ -148,12 +151,14 @@ func startContainer(name, imageName string, config *container.Config, hostConfig
 
 func init() {
 	rootCmd.AddCommand(startCmd)
-	startCmd.AddCommand(startDroneCmd, startSimCmd)
+	startCmd.AddCommand(startDroneCmd)
 
 	startCmd.PersistentFlags().BoolVarP(&Recreate, "recreate", "r", false, "Recreate if already running")
-	startDroneCmd.PersistentFlags().BoolVarP(&NoRestart, "no_restart", "n", false, "Do not enable automatic restart")
-	startSimCmd.Flags().StringP("location", "l", "", "Simulation location (LAT,LNG,ALT)")
-	if err := viper.BindPFlag("MOCK_POSITION", startSimCmd.Flags().Lookup("location")); err != nil {
+	startCmd.Flags().StringP("location", "l", "", "Simulation location (LAT,LNG,ALT)")
+	if err := viper.BindPFlag("MOCK_POSITION", startCmd.Flags().Lookup("location")); err != nil {
 		panic(err)
 	}
+
+	startDroneCmd.PersistentFlags().BoolVarP(&NoRestart, "no_restart", "n", false, "Do not enable automatic restart")
+
 }

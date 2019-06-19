@@ -21,6 +21,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // stopCmd represents the stop command
@@ -37,19 +38,12 @@ var stopDroneCmd = &cobra.Command{
 	RunE:  runStopDrone,
 }
 
-// stopCmd represents the stop command
-var stopSimCmd = &cobra.Command{
-	Use:   "sim",
-	Short: "Stop sim container",
-	RunE:  runStopSim,
-}
-
 func runStopDrone(cmd *cobra.Command, args []string) error {
-	return runStop("drone", droneImage)
-}
-
-func runStopSim(cmd *cobra.Command, args []string) error {
-	return runStop("sim", simImage)
+	img := viper.GetString("IMAGE")
+	if img == "" {
+		return errNoImage
+	}
+	return runStop("drone", imageBase+img)
 }
 
 func runStop(name, imageName string) error {
@@ -85,15 +79,5 @@ func stopContainer(name, imageName string) error {
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
-	stopCmd.AddCommand(stopDroneCmd, stopSimCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// stopCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// stopCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	stopCmd.AddCommand(stopDroneCmd)
 }

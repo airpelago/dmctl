@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,11 +25,15 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
-	droneImage = "docker.io/tobiasfriden/dmc-rpi:latest"
-	simImage   = "docker.io/tobiasfriden/dmc-sim:latest"
+	imageBase = "docker.io/tobiasfriden/"
+)
+
+var (
+	errNoImage = errors.New("OBC not configured, select version by running dmctl config obc")
 )
 
 // pullCmd represents the pull command
@@ -47,19 +52,12 @@ var pullDrone = &cobra.Command{
 	RunE:  runPullDrone,
 }
 
-// pullSim represents the pull sim command
-var pullSim = &cobra.Command{
-	Use:   "sim",
-	Short: "Download latest version of sim image",
-	RunE:  runPullSim,
-}
-
 func runPullDrone(cmd *cobra.Command, args []string) error {
-	return pullImage("drone", droneImage)
-}
-
-func runPullSim(cmd *cobra.Command, args []string) error {
-	return pullImage("sim", simImage)
+	img := viper.GetString("IMAGE")
+	if img == "" {
+		return errNoImage
+	}
+	return pullImage("drone", imageBase+img)
 }
 
 func pullImage(name, imageName string) error {
@@ -81,5 +79,5 @@ func pullImage(name, imageName string) error {
 
 func init() {
 	rootCmd.AddCommand(pullCmd)
-	pullCmd.AddCommand(pullDrone, pullSim)
+	pullCmd.AddCommand(pullDrone)
 }

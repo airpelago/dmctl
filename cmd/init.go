@@ -27,6 +27,9 @@ var initCmd = &cobra.Command{
 		if err := runConfigureDrone(cmd, args); err != nil {
 			return err
 		}
+		if err := rungConfigureOBC(cmd, args); err != nil {
+			return err
+		}
 		if err := runPullDrone(cmd, args); err != nil {
 			return err
 		}

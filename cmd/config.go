@@ -68,6 +68,12 @@ var droneCmd = &cobra.Command{
 	},
 }
 
+var obcCmd = &cobra.Command{
+	Use:   "obc",
+	Short: "Configure onboard software version",
+	RunE:  rungConfigureOBC,
+}
+
 var anipCmd = &cobra.Command{
 	Use:   "anip",
 	Short: "Configures ANIP settings",
@@ -105,6 +111,29 @@ func runConfigureDrone(cmd *cobra.Command, args []string) error {
 	viper.Set("ID", id)
 	viper.Set("PASSWORD", pass)
 	viper.Set("FCU_URL", url)
+	return writeConfig()
+}
+
+var images = []string{
+	"dmc-rpi",
+	"dmc-x86",
+	"dmc-sim",
+}
+
+func rungConfigureOBC(cmd *cobra.Command, args []string) error {
+	obcPrompt := &promptui.Select{
+		Label: "Select OBC type",
+		Items: []string{
+			"Raspberry Pi",
+			"Linux 64-bit",
+			"Simulated",
+		},
+	}
+	idx, _, err := obcPrompt.Run()
+	if err != nil {
+		return err
+	}
+	viper.Set("IMAGE", images[idx])
 	return writeConfig()
 }
 
@@ -336,5 +365,5 @@ func envList(keys ...string) (list []string) {
 
 func init() {
 	rootCmd.AddCommand(configCmd, loginCmd)
-	configCmd.AddCommand(droneCmd, anipCmd, listCmd, clearCmd)
+	configCmd.AddCommand(droneCmd, obcCmd, anipCmd, listCmd, clearCmd)
 }
