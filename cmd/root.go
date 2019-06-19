@@ -21,26 +21,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/docker/docker/client"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
 var Verbose bool
-
-var dockerClient *client.Client
-
-const dockerFailMessage = `
-Could not connect to docker. Docker is necessary in order to run Drone Mission Control onboard software.
-
-If docker is not installed, please install it by following the instructions at: https://docs.docker.com/install/
-
-If docker is running, you might need to run this CLI as sudo. You can also add permissions for the current user to use docker:
-
-  sudo usermod -aG docker USER
-
-Note that these changes require logout to take affect.
-`
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -67,13 +52,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Show verbose output")
-
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		fmt.Print(dockerFailMessage)
-		os.Exit(1)
-	}
-	dockerClient = cli
 }
 
 // initConfig reads in config file and ENV variables if set.

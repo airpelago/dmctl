@@ -16,20 +16,10 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 
-	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-const (
-	imageBase = "docker.io/tobiasfriden/"
 )
 
 var (
@@ -57,24 +47,7 @@ func runPullDrone(cmd *cobra.Command, args []string) error {
 	if img == "" {
 		return errNoImage
 	}
-	return pullImage("drone", imageBase+img)
-}
-
-func pullImage(name, imageName string) error {
-	fmt.Printf("Pulling %s..\n", name)
-	out, err := dockerClient.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
-	if err != nil {
-		return err
-	}
-	var writer io.Writer
-	if Verbose {
-		writer = os.Stdout
-	} else {
-		writer = ioutil.Discard
-	}
-	_, err = io.Copy(writer, out)
-	good("Done!")
-	return err
+	return pullImage("drone", img)
 }
 
 func init() {

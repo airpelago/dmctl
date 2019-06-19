@@ -16,10 +16,8 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -51,19 +49,18 @@ func runStartDrone(cmd *cobra.Command, args []string) error {
 		return errNoImage
 	}
 	if img == "dmc-sim" {
-		return runSimulatedDrone(imageBase + img)
+		return runSimulatedDrone(img)
 	} else {
-		return runOnboardDrone(imageBase + img)
+		return runOnboardDrone(img)
 	}
 }
 
 func runOnboardDrone(imageName string) error {
 	droneEnv := envList("ID", "PASSWORD", "FCU_URL", "GCS_URL", "DMC_URI", "DMC_SESSION_URI", "DMC_ANIP_URI", "MOCK_IMSI", "MOCK_POSITION")
 	config := &container.Config{
-		Env:   droneEnv,
-		Cmd:   []string{},
-		Image: imageName,
-		Tty:   true,
+		Env: droneEnv,
+		Cmd: []string{},
+		Tty: true,
 	}
 	policy := container.RestartPolicy{}
 	if !NoRestart {
@@ -87,66 +84,12 @@ func runSimulatedDrone(imageName string) error {
 	}
 	droneEnv := envList("ID", "PASSWORD", "DMC_URI", "DMC_SESSION_URI", "DMC_ANIP_URI", "MOCK_IMSI", "MOCK_POSITION")
 	config := &container.Config{
-		Env:   droneEnv,
-		Cmd:   []string{fmt.Sprintf("--location %s,0", location)},
-		Image: imageName,
-		Tty:   true,
+		Env: droneEnv,
+		Cmd: []string{fmt.Sprintf("--location %s,0", location)},
+		Tty: true,
 	}
 	hostConfig := &container.HostConfig{}
 	return startContainer("drone", imageName, config, hostConfig)
-}
-
-func containerRunning(imageName string) (bool, error) {
-	ctx := context.Background()
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return false, err
-	}
-	for _, c := range containers {
-		if c.Image == imageName {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func startContainer(name, imageName string, config *container.Config, hostConfig *container.HostConfig) error {
-	running, err := containerRunning(imageName)
-	if err != nil {
-		return err
-	}
-	if running {
-		fmt.Printf("Container %s is already running\n", name)
-		if !Recreate {
-			return nil
-		} else {
-			if err := stopContainer(name, imageName); err != nil {
-				return err
-			}
-		}
-	}
-	fmt.Printf("Creating %s..\n", name)
-	ctx := context.Background()
-	resp, err := dockerClient.ContainerCreate(
-		ctx,
-		config,
-		hostConfig,
-		nil,
-		name,
-	)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Starting %s..\n", name)
-	if err := dockerClient.ContainerStart(
-		ctx,
-		resp.ID,
-		types.ContainerStartOptions{},
-	); err != nil {
-		return err
-	}
-	good("Done!")
-	return nil
 }
 
 func init() {

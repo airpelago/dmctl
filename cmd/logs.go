@@ -16,13 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
-	"fmt"
-	"io"
-	"os"
-	"strings"
-
-	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
 )
 
@@ -44,37 +37,6 @@ func runLogs(cmd *cobra.Command, args []string) error {
 	}
 	return containerLogs("/drone")
 
-}
-
-func containerLogs(name string) error {
-	ctx := context.Background()
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return err
-	}
-	var id string
-	for _, c := range containers {
-		for _, n := range c.Names {
-			if n == name {
-				id = c.ID
-				break
-			}
-		}
-	}
-	if id == "" {
-		bad(fmt.Sprintf("Container %s not found", strings.TrimPrefix(name, "/")))
-		return nil
-	}
-	out, err := dockerClient.ContainerLogs(ctx, id, types.ContainerLogsOptions{
-		ShowStderr: true,
-		ShowStdout: true,
-		Follow:     Follow,
-	})
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(os.Stdout, out)
-	return err
 }
 
 func init() {

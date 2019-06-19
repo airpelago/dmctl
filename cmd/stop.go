@@ -16,10 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,7 +39,7 @@ func runStopDrone(cmd *cobra.Command, args []string) error {
 	if img == "" {
 		return errNoImage
 	}
-	return runStop("drone", imageBase+img)
+	return runStop("drone", img)
 }
 
 func runStop(name, imageName string) error {
@@ -56,24 +52,6 @@ func runStop(name, imageName string) error {
 		return nil
 	}
 	return stopContainer(name, imageName)
-}
-
-func stopContainer(name, imageName string) error {
-	fmt.Printf("Stopping %s..\n", name)
-	ctx := context.Background()
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, c := range containers {
-		if c.Image == imageName {
-			if err := dockerClient.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-				return err
-			}
-		}
-	}
-	good("Done!")
-	return nil
 }
 
 func init() {
