@@ -82,10 +82,17 @@ func runSimulatedDrone(imageName string) error {
 	if err := writeConfig(); err != nil {
 		return errors.New("failed writing location to config")
 	}
+	simType := viper.GetString("SIM_TYPE")
+	if simType == "" {
+		return errors.New("simulation type not set, run dmctl config obc")
+	}
 	droneEnv := envList("ID", "PASSWORD", "DMC_URI", "DMC_SESSION_URI", "DMC_ANIP_URI", "MOCK_IMSI", "MOCK_POSITION")
 	config := &container.Config{
 		Env: droneEnv,
-		Cmd: []string{fmt.Sprintf("--location %s,0", location)},
+		Cmd: []string{
+			fmt.Sprintf("--location %s,0", location),
+			fmt.Sprintf("--%s", simType),
+		},
 		Tty: true,
 	}
 	hostConfig := &container.HostConfig{}

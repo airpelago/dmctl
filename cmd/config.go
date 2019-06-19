@@ -118,6 +118,7 @@ var images = []string{
 	"dmc-rpi",
 	"dmc-x86",
 	"dmc-sim",
+	"dmc-sim",
 }
 
 func rungConfigureOBC(cmd *cobra.Command, args []string) error {
@@ -126,7 +127,8 @@ func rungConfigureOBC(cmd *cobra.Command, args []string) error {
 		Items: []string{
 			"Raspberry Pi",
 			"Linux 64-bit",
-			"Simulated",
+			"Simulated - Copter",
+			"Simulated - Plane",
 		},
 	}
 	idx, _, err := obcPrompt.Run()
@@ -134,6 +136,15 @@ func rungConfigureOBC(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	viper.Set("IMAGE", images[idx])
+	if idx > 1 {
+		var simType string
+		if idx == 2 {
+			simType = "copter"
+		} else {
+			simType = "plane"
+		}
+		viper.Set("SIM_TYPE", simType)
+	}
 	return writeConfig()
 }
 
